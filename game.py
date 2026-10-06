@@ -8,13 +8,21 @@ FPS = 60
 BG = (30,35,25)
 
 
+HUD_HEIGHT = 56
+
+
 class Zombie:
+    """Standard zombie. Subclasses only override the stat constants below."""
     SPEED = 1.5
+    HP = 3
+    SIZE = 30
+    COLOR = (60,140,60)
 
     def __init__(self, x, y):
-        self.rect = pygame.Rect(x, y, 30, 30)
-        self.color = (60,140,60)
-        self.hp = 3
+        self.rect = pygame.Rect(x, y, self.SIZE, self.SIZE)
+        self.pos = [float(x), float(y)]  # float position so slow speeds (< 1 px/frame) still move
+        self.color = self.COLOR
+        self.hp = self.HP
         self.wobble = random.uniform(0, 6.28)
         self.frame = 0
 
@@ -24,8 +32,10 @@ class Zombie:
         dx, dy = px-cx, py-cy
         dist = (dx**2+dy**2)**0.5
         if dist:
-            self.rect.x += int(dx/dist*self.SPEED)
-            self.rect.y += int(dy/dist*self.SPEED)
+            self.pos[0] += dx/dist*self.SPEED
+            self.pos[1] += dy/dist*self.SPEED
+            self.rect.x = int(round(self.pos[0]))
+            self.rect.y = int(round(self.pos[1]))
         self.frame += 1
 
     def hit(self):
@@ -36,17 +46,37 @@ class Zombie:
         wobble_y = int(math.sin(self.frame*0.2)*3)
         draw_rect = self.rect.move(0, wobble_y)
         pygame.draw.rect(screen, self.color, draw_rect, border_radius=5)
-        for ex in [draw_rect.x+6, draw_rect.x+18]:
-            pygame.draw.circle(screen, (200,40,40), (ex, draw_rect.y+10), 4)
+        eye_r = max(2, self.SIZE // 8)
+        for ex in [draw_rect.x + self.SIZE//5, draw_rect.x + self.SIZE*3//5]:
+            pygame.draw.circle(screen, (200,40,40), (ex, draw_rect.y + self.SIZE//3), eye_r)
+
+
+class FastZombie(Zombie):
+    SPEED = 3.0
+    HP = 1
+    SIZE = 20
+    COLOR = (200,200,60)
+
+
+class TankZombie(Zombie):
+    SPEED = 0.8
+    HP = 6
+    SIZE = 44
+    COLOR = (110,50,130)
+
+
+ZOMBIE_TYPES = [Zombie, FastZombie, TankZombie]
+ZOMBIE_WEIGHTS = [60, 25, 15]  # spawn chances in percent
 
 
 def spawn_zombie(width, height, player_rect, margin=120):
+    cls = random.choices(ZOMBIE_TYPES, weights=ZOMBIE_WEIGHTS)[0]
     while True:
-        x = random.randint(0, width-30)
-        y = random.randint(0, height-30)
-        rect = pygame.Rect(x, y, 30, 30)
+        x = random.randint(0, width - cls.SIZE)
+        y = random.randint(HUD_HEIGHT, height - cls.SIZE)  # spawn below the HUD bar
+        rect = pygame.Rect(x, y, cls.SIZE, cls.SIZE)
         if not rect.colliderect(player_rect.inflate(margin, margin)):
-            return Zombie(x, y)
+            return cls(x, y)
 
 
 SPEED = 4
@@ -271,7 +301,7 @@ class GameEngine:
         self.player.draw(self.screen, pygame.time.get_ticks())
         now = pygame.time.get_ticks()
         for e in self.explosions: e.draw(self.screen, now)
-        hud_bg = pygame.Rect(0, 0, WIDTH, 56)
+        hud_bg = pygame.Rect(0, 0, WIDTH, HUD_HEIGHT)
         pygame.draw.rect(self.screen, (15,20,15), hud_bg)
         hud = self.font.render(
             f"HP: {self.player.hp}/{MAX_HP}  Wave: {self.wave}  Score: {self.score}  Kills: {self.kills}/{self.kills_to_next}",
