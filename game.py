@@ -53,6 +53,8 @@ SPEED = 4
 MAX_HP = 3
 INVINCIBLE_MS = 1000
 BLINK_MS = 100
+CLIP_SIZE = 12
+RELOAD_MS = 2000
 
 
 class Player:
@@ -63,6 +65,21 @@ class Player:
         self.shoot_cooldown = 0
         self.hp = MAX_HP
         self.invincible_until = 0  # pygame.time.get_ticks() value when protection ends
+        self.ammo = CLIP_SIZE
+        self.reloading = False
+        self.reload_end = 0  # get_ticks() value when the current reload finishes
+
+    def start_reload(self, now):
+        self.reloading = True
+        self.reload_end = now + RELOAD_MS
+
+    def update_reload(self, now):
+        if self.reloading and now >= self.reload_end:
+            self.reloading = False
+            self.ammo = CLIP_SIZE
+
+    def reload_remaining(self, now):
+        return max(0, self.reload_end - now) / 1000
 
     def is_invincible(self, now):
         return now < self.invincible_until
@@ -86,8 +103,8 @@ class Player:
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
 
-    def shoot(self, target_pos):
-        if self.shoot_cooldown > 0: return
+    def shoot(self, target_pos, now):
+        if self.shoot_cooldown > 0 or self.reloading or self.ammo <= 0: return
         cx, cy = self.rect.center
         tx, ty = target_pos
         dx, dy = tx-cx, ty-cy
@@ -96,6 +113,9 @@ class Player:
         vx, vy = dx/dist*10, dy/dist*10
         self.bullets.append([cx-4, cy-4, vx, vy])
         self.shoot_cooldown = 15
+        self.ammo -= 1  # only a bullet that was actually fired costs ammo
+        if self.ammo == 0:
+            self.start_reload(now)
 
     def update_bullets(self, width, height):
         live = []
@@ -141,7 +161,7 @@ class GameEngine:
             if event.type == pygame.QUIT: return False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r: self.reset()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self.game_over:
-                self.player.shoot(event.pos)
+                self.player.shoot(event.pos, pygame.time.get_ticks())
         return True
 
     def update(self):
@@ -150,6 +170,7 @@ class GameEngine:
         self.player.move(keys, WIDTH, HEIGHT)
         self.player.update_bullets(WIDTH, HEIGHT)
         now = pygame.time.get_ticks()
+        self.player.update_reload(now)
         self.score = int(time.time() - self.start_time) + self.bonus_score
 
         for z in self.zombies:
@@ -196,8 +217,16 @@ class GameEngine:
             f"HP: {self.player.hp}/{MAX_HP}  Wave: {self.wave}  Score: {self.score}  Kills: {self.kills}/{self.kills_to_next}",
             True, (160,220,120))
         self.screen.blit(hud, (8, 4))
-        controls = self.small_font.render("WASD Move  |  Left Click Shoot  |  R Restart", True, (110,150,90))
-        self.screen.blit(controls, (8, 34))
+        now = pygame.time.get_ticks()
+        if self.player.reloading:
+            ammo_text = f"RELOADING {self.player.reload_remaining(now):.1f}s"
+            ammo_color = (240,170,60)
+        else:
+            ammo_text = f"Ammo: {self.player.ammo}/{CLIP_SIZE}"
+            ammo_color = (160,220,120)
+        self.screen.blit(self.small_font.render(ammo_text, True, ammo_color), (8, 34))
+        controls = self.small_font.render("WASD Move | Left Click Shoot | R Restart", True, (110,150,90))
+        self.screen.blit(controls, (WIDTH - controls.get_width() - 8, 34))
         if self.game_over:
             ov = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             ov.fill((0,0,0,160))
