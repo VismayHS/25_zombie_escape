@@ -1,0 +1,696 @@
+
+> /model sonnet
+  ⎿  Set model to Sonnet 5.5 for this session only
+
+> <browser_instruction># Claude in Chrome browser automation
+
+  You have access to browser automation tools (mcp__claude-in-chrome__*) for
+  interacting with web pages in Chrome. Follow these guidelines for effective
+  browser automation.
+
+  ## Loading deferred tools
+
+  If the mcp__claude-in-chrome__* tools are deferred (must be loaded via
+  ToolSearch before use), load every tool you expect to need in ONE ToolSearch
+  call — the select query accepts a comma-separated list — never one call per
+  tool. Start with the core set:
+
+  ToolSearch with query
+  "select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__naviga
+  te,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__clau
+  de-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__tabs_close_mcp"
+
+  Add task-specific tools to the same call when the task obviously needs them:
+  read_console_messages / read_network_requests for debugging, form_input for
+  forms, gif_creator for recordings, javascript_tool for page scripting.
+
+  ## GIF recording
+
+  When performing multi-step browser interactions that the user may want to
+  review or share, use mcp__claude-in-chrome__gif_creator to record them.
+
+  You must ALWAYS:
+  * Capture extra frames before and after taking actions to ensure smooth
+  playback
+  * Name the file meaningfully to help the user identify it later (e.g.,
+  "login_process.gif")
+
+  ## Console log debugging
+
+  You can use mcp__claude-in-chrome__read_console_messages to read console
+  output. Console output may be verbose. If you are looking for specific log
+  entries, use the 'pattern' parameter with a regex-compatible pattern. This
+  filters results efficiently and avoids overwhelming output. For example, use
+  pattern: "[MyApp]" to filter for application-specific logs rather than
+  reading all console output.
+
+  ## Alerts and dialogs
+
+  IMPORTANT: Do not trigger JavaScript alerts, confirms, prompts, or browser
+  modal dialogs through your actions. These browser dialogs block all further
+  browser events and will prevent the extension from receiving any subsequent
+  commands. Instead, when possible, use console.log for debugging and then use
+  the mcp__claude-in-chrome__read_console_messages tool to read those log
+  messages. If a page has dialog-triggering elements:
+  1. Avoid clicking buttons or links that may trigger alerts (e.g., "Delete"
+  buttons with confirmation dialogs)
+  2. If you must interact with such elements, warn the user first that this may
+  interrupt the session
+  3. Use mcp__claude-in-chrome__javascript_tool to check for and dismiss any
+  existing dialogs before proceeding
+
+  If you accidentally trigger a dialog and lose responsiveness, inform the user
+  they need to manually dismiss it in the browser.
+
+  ## Avoid rabbit holes and loops
+
+  When using browser automation tools, stay focused on the specific task. If
+  you encounter any of the following, stop and ask the user for guidance:
+  - Unexpected complexity or tangential browser exploration
+  - Browser tool calls failing or returning errors after 2-3 attempts
+  - No response from the browser extension
+  - Page elements not responding to clicks or input
+  - Pages not loading or timing out
+  - Unable to complete the browser task despite multiple approaches
+
+  Explain what you attempted, what went wrong, and ask how the user would like
+  to proceed. Do not keep retrying the same failing browser action or explore
+  unrelated pages without checking in first.
+
+  ## Tab context and session startup
+
+  IMPORTANT: At the start of each browser automation session, call
+  mcp__claude-in-chrome__tabs_context_mcp first to get information about the
+  user's current browser tabs. Use this context to understand what the user
+  might want to work with before creating new tabs.
+
+  Never reuse tab IDs from a previous/other session. Follow these guidelines:
+  1. Only reuse an existing tab if the user explicitly asks to work with it
+  2. Otherwise, create a new tab with mcp__claude-in-chrome__tabs_create_mcp
+  3. If a tool returns an error indicating the tab doesn't exist or is invalid,
+  call tabs_context_mcp to get fresh tab IDs
+  4. When a tab is closed by the user or a navigation error occurs, call
+  tabs_context_mcp to see what tabs are available</browser_instruction>
+
+> Inspect starter code + Task 1 Health System
+
+  I am completing an individual Vibe Coding lab using the existing Zombie
+  Escape repository. Please first read README.md and the current game.py
+  completely before editing anything.
+
+  Important constraints:
+
+  Preserve the existing game and architecture. Do NOT replace it with an
+  unrelated implementation or rewrite everything unnecessarily.
+
+  Use only Python and the existing pygame/pygame-ce dependency.
+
+  Keep the code simple, modular and understandable enough for me to explain.
+
+  Do not implement Tasks 2, 3 or 4 yet.
+
+  If you can directly edit my files, edit them. Otherwise return the complete
+  updated game.py, not disconnected fragments.
+
+  Implement Task 1 — Health System exactly according to the README:
+
+  Player starts with exactly 3 HP.
+
+  A zombie collision removes exactly 1 HP rather than immediately ending the
+  game.
+
+  After taking damage, give the player a short invincibility window of about 1
+  second using a non-blocking timer such as pygame.time.get_ticks().
+
+  While invincible, further collisions must not reduce HP.
+
+  Make invincibility visually obvious by blinking/tinting the player.
+
+  Game over must happen only when HP reaches 0.
+
+  Show current HP clearly in the HUD.
+
+  Pressing R/reset must restore HP and all Task 1 state correctly.
+
+  While touching the existing code, also repair obvious baseline correctness
+  problems without adding unrelated functionality:
+
+  Shooting should respond only to the left mouse button because the README says
+  Left Click.
+
+  Ensure the score logic does not lose a zombie-kill bonus immediately on the
+  next frame.
+
+  Preserve the existing wave progression and controls.
+
+  Keep the HUD readable instead of allowing one huge line to be clipped.
+
+  After implementing it, explain:
+
+  exactly what you changed,
+
+  why the invincibility implementation cannot repeatedly damage the player
+  every frame,
+
+  the exact manual tests I should perform before committing.
+
+  Do not begin the ammo, barrel, Fast Zombie or Tank Zombie tasks yet.
+
+  Searched for 1 pattern, read 4 files, ran 2 shell commands (ctrl+o to expand)
+
+● Task 1 is implemented in game.py (25_zombie_escape/game.py). I haven't played
+  it: I only compiled it and ran a headless check of the damage logic. The check
+  had hits at 0 ms (HP 3→2), 500 ms (ignored), 1001 ms (HP 1) and 2100 ms (HP
+  0). After a reset, HP was back at 3 and game over was cleared.
+
+  What I changed
+
+  - Health: Player now has hp (starts at 3) and invincible_until. A new
+    take_damage(now) removes 1 HP and starts a 1000 ms invincibility window. The
+    constants MAX_HP, INVINCIBLE_MS and BLINK_MS are at the top of the file.
+  - Collision: a zombie touch now calls take_damage instead of ending the game.
+    game_over is set only when hp <= 0.
+  - Blink: while invincible, the player flashes white every 100 ms. Player.draw
+    now takes the current time.
+  - HUD: it is now two rows, 56 px tall. The top row shows HP: 3/3  Wave  Score
+    Kills. The second row, in a smaller font, shows the controls so nothing is
+    clipped.
+  - Reset: reset() builds a fresh Player, so HP and the invincibility timer
+    restart. The score bonus also resets.
+  - Left click only: shooting now requires event.button == 1.
+  - Score bonus: the old code recomputed the score from elapsed time every
+    frame, which wiped the +10 kill bonus on the next frame. I added
+    bonus_score, and the score is now elapsed time plus bonus_score.
+  - Extra cleanup: shoot() appended a Rect, then a list, then popped the Rect. I
+    reduced it to a single append of the list. Behaviour is unchanged.
+
+  Wave progression, zombie logic and controls are untouched, and nothing from
+  Tasks 2–4 was added.
+
+  Why a zombie can't damage the player every frame
+
+  take_damage first checks now < invincible_until. The first hit sets
+  invincible_until = now + 1000, so for the next second every call returns
+  without changing HP, however many frames a zombie overlaps. The timer uses
+  pygame.time.get_ticks(), so nothing blocks or sleeps. If a zombie is still
+  touching you after the window ends, you take the next hit. That is intended.
+
+  Manual tests before committing
+
+  Run python game.py from the venv.
+  1. HUD: it starts at HP: 3/3, and the controls row is fully visible with no
+     clipping.
+  2. First hit: let a zombie touch you. HP goes to 2 (not 1 or 0), the game
+     continues and the player blinks.
+  3. Invincibility: stand inside a zombie. HP drops by exactly 1 per second
+     (3→2→1→0), not instantly.
+  4. Game over: the "DEVOURED!" screen appears only when HP hits 0. At HP 1 you
+     can still move and shoot.
+  5. Frozen state: after game over, the score stops changing and clicks don't
+     shoot.
+  6. Restart: press R after game over. HP returns to 3, there is no blinking,
+     and score, wave and kills reset.
+  7. Restart mid-blink: press R while the player is blinking. The blink stops
+     immediately.
+  8. Left click: left click shoots. Right and middle click do nothing.
+  9. Score bonus: kill a zombie. The score jumps by 10 and stays there instead
+     of dropping back.
+  10. Waves: reach 8 kills. Wave 2 starts and extra zombies spawn.
+
+> Task 2 Ammo and Reload System
+
+  Continue from the working Task 1 implementation. Do not remove or regress
+  anything already implemented.
+
+  Now implement only Task 2 — Ammo System from the repository README.
+
+  Required behaviour:
+
+  Maximum clip size is exactly 12 bullets.
+
+  Start/reset with 12 bullets.
+
+  A bullet should consume one ammo only when a valid shot is actually fired.
+
+  At 0 ammo, shooting must be blocked.
+
+  Reaching 0 ammo should trigger a reload.
+
+  Reload duration must be exactly 2 seconds.
+
+  The game must continue running normally while reloading. Do NOT use
+  time.sleep() or anything that freezes the event/game loop.
+
+  Use a timestamp/timer based implementation such as pygame.time.get_ticks().
+
+  Ammo must return to 12 only after the full 2-second reload duration has
+  elapsed.
+
+  Firing must remain blocked while reloading.
+
+  Clearly display ammo and reload status in the HUD. Ideally show something
+  like Ammo: 7/12, and when reloading show RELOADING and/or remaining time.
+
+  Reset with R must cancel any current reload and restore a full clip.
+
+  Preserve the health/invincibility system and all original wave/gameplay
+  behaviour.
+
+  Please keep the design simple and readable and add no new dependency.
+
+  After editing, explain the state variables you introduced and give me exact
+  manual tests for:
+
+  normal firing,
+
+  reaching zero,
+
+  attempted shooting at zero,
+
+  the 2-second reload,
+
+  attempting to fire while reloading,
+
+  firing after reload,
+
+  restarting during/after a reload.
+
+  Do not implement barrels or new zombie types yet.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Task 2 is in game.py (25_zombie_escape/game.py), and Task 1 is untouched. I
+  haven't played it. I compiled it and ran a headless check, which passed:
+  - Firing 12 shots left 0 ammo and started a reload.
+  - A shot during the reload did nothing.
+  - Ammo was still 0 at 1999 ms and 12 at 2000 ms.
+  - A shot after the reload dropped ammo to 11.
+  - reset() restored 12 ammo and cleared the reload.
+
+  State variables
+
+  All of these are on Player:
+  - ammo is the current bullets in the clip. It starts at CLIP_SIZE (12).
+  - reloading is a boolean flag that is True during a reload.
+  - reload_end is the pygame.time.get_ticks() value when the reload finishes
+    (start + RELOAD_MS, 2000).
+
+  What changed
+
+  - Shooting: shoot(target_pos, now) returns early if the cooldown is active,
+    the player is reloading, or ammo is 0. ammo -= 1 happens only after the
+    bullet is appended, so a blocked or zero-distance click costs nothing.
+  - Reload trigger: when a shot brings ammo to 0, start_reload(now) sets
+    reloading and reload_end.
+  - Reload finish: update_reload(now) runs every frame from GameEngine.update.
+    When now >= reload_end, it refills ammo to 12 and clears the flag. Nothing
+    blocks, so movement, zombies and invincibility keep running.
+  - Reset: reset() builds a new Player, so ammo is 12 and any reload is
+    cancelled.
+  - HUD: the second row shows Ammo: 7/12 on the left. While reloading it
+    switches to an orange RELOADING 1.4s countdown. The controls text moved to
+    the right of that row. Ammo shares that row because the first row is already
+    almost full width.
+
+  Manual tests
+
+  Run python game.py.
+  1. Normal firing: HUD starts at Ammo: 12/12. Click once and it reads 11. Click
+     slowly 5 more times and it reads 6.
+  2. Cooldown: hold or spam-click quickly. Ammo drops only once per shot that
+     actually fires (about 4 per second), not once per click.
+  3. Reaching zero: fire until the 12th shot. The HUD immediately changes to
+     orange RELOADING 2.0s and counts down.
+  4. Shooting at zero: during the reload, click repeatedly. No bullets appear
+     and nothing changes.
+  5. The 2-second reload: time it with a stopwatch from the 12th shot. It should
+     show Ammo: 12/12 at about 2 seconds, not earlier. Move around and watch
+     zombies during the reload to confirm the game does not freeze.
+  6. Firing while reloading: click at 0.5 s, 1.0 s and 1.9 s. Nothing fires.
+     Click right after it flips to 12/12 and a bullet fires, showing 11/12.
+  7. Firing after reload: shoot a full clip again. It reloads again each time
+     ammo hits 0.
+  8. Restart during a reload: empty the clip and press R while it says
+     RELOADING. You should get Ammo: 12/12 right away, you can fire immediately,
+     and no late refill happens.
+  9. Restart after a reload: let a reload finish, fire 3 shots (9/12), die or
+     press R. It shows 12/12.
+  10. Regression: check that HP, blinking, game over, waves, and score bonus
+      still work as before.
+
+> Task 3 Explosive Barrels
+
+  Continue from the tested Task 1 + Task 2 version. Preserve all existing
+  functionality.
+
+  Implement only Task 3 — Explosive Barrel from the README.
+
+  Requirements:
+
+  Place exactly 4 visible barrels on the map.
+
+  Use a small, understandable Barrel class or similarly clean structure rather
+  than scattering unrelated barrel variables everywhere.
+
+  Barrels should have obvious visuals distinct from the player and zombies.
+
+  A bullet colliding with a barrel must:
+
+  consume/remove that bullet,
+
+  trigger the barrel exactly once,
+
+  remove that barrel,
+
+  destroy every zombie whose centre is within one fixed explosion radius.
+
+  Show a clearly visible but short-lived explosion effect, such as an
+  expanding/fading circle. It must be non-blocking; do not freeze the game with
+  sleep.
+
+  Explosion kills MUST update the same kill/progression logic as normal bullet
+  kills so that barrel kills contribute correctly to:
+
+  kill count,
+
+  wave progression,
+
+  scoring where appropriate.
+
+  Avoid counting the same zombie twice.
+
+  Resetting with R must restore all four barrels and clear temporary explosion
+  effects.
+
+  Preserve Health, invincibility, Ammo, reload, regular shooting, wave
+  progression and game-over behaviour.
+
+  Add no new dependencies.
+
+  Please pay special attention to the wave logic. Directly removing
+  explosion-hit zombies without updating kill progression would be incorrect.
+
+  After editing, explain the barrel collision flow and give me precise manual
+  tests to prove:
+
+  all four barrels exist,
+
+  bullets trigger them,
+
+  nearby zombies die,
+
+  distant zombies survive,
+
+  the barrel disappears,
+
+  the explosion is visible,
+
+  explosion kills still advance the wave correctly,
+
+  reset restores the barrels.
+
+  Do not implement Fast/Tank zombies yet.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● My test script had the error (Barrel has no x), not the game. I'll fix the
+  script and rerun.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Task 3 is in game.py (25_zombie_escape/game.py), and Health, Ammo and Reload
+  are untouched. I haven't played it. I compiled it and ran a headless check,
+  which passed:
+  - There were 4 barrels at the start.
+  - A bullet on a barrel removed the bullet and the barrel. A zombie 50 px away
+    died (score +10, kills 1) and one 150 px away survived.
+  - An explosion kill at 7/8 kills advanced to wave 2 and spawned 5 zombies.
+  - reset() brought back 4 barrels and cleared the explosions.
+
+  What I added
+
+  - Barrel: a 28×36 rect drawn as a red barrel with yellow bands and a dark
+    outline. The 4 positions are in BARREL_POSITIONS, in the corners of the map
+    clear of the player's start and the HUD.
+  - Explosion: stores a centre and a start timestamp. It draws an orange circle
+    that expands to EXPLOSION_RADIUS and fades over EXPLOSION_MS (400 ms), using
+    get_ticks() with no sleep. The engine drops finished explosions each frame.
+  - register_kill(zombie): the one place that removes a zombie and adds the kill
+    and 10 points. Bullets and explosions both call it. It only counts a zombie
+    that is still in the list, so nothing is counted twice.
+  - handle_barrel_hits(now) and explode(center, now): these do the barrel work
+    (flow below).
+  - Reset: reset() rebuilds self.barrels and empties self.explosions.
+
+  Barrel collision flow (each frame, in update)
+
+  1. Bullets move, then handle_barrel_hits checks each barrel against each
+     bullet's point.
+  2. On a hit, that bullet is removed, the barrel is removed and explode() runs.
+     The loop then breaks, so the barrel triggers once.
+  3. explode() adds an Explosion, then calls register_kill for every zombie
+     whose centre is within 100 px of the barrel's centre.
+  4. The normal bullet-versus-zombie check runs after that, using the same
+     register_kill.
+  5. The existing wave check then sees the updated kills and advances the wave
+     if needed. Because it runs after barrel kills, explosion kills count
+     towards the wave.
+
+  The old wave rule is unchanged: kills resets to 0 when a wave starts, so extra
+  kills past the threshold in one frame are dropped, as before.
+
+  I also tidied the bullet-versus-zombie loop slightly. It now stops checking a
+  zombie once it has been killed, and it removes each bullet directly.
+
+  Manual tests
+
+  Run python game.py.
+  1. Four barrels: four red barrels with yellow bands are visible, one near each
+     corner, and none overlap the HUD or the player.
+  2. Bullets trigger them: shoot one barrel. The bullet vanishes, an orange ring
+     expands and fades in about 0.4 s, and the game keeps running. The
+     explosion also shows if you shoot the last barrel while the game is over.
+  3. Barrel disappears: after the blast that barrel is gone, and shooting at its
+     empty spot does nothing. The other 3 remain.
+  4. Nearby zombies die: let zombies gather close to a barrel (within about 100
+     px, roughly three barrel-widths), then shoot it. They die at once and the
+     score rises by 10 each.
+  5. Distant zombies survive: zombies clearly outside the ring (more than 100 px
+     away) are unharmed.
+  6. Wave progression: note Kills: x/8. Blow up a barrel next to several
+     zombies. Kills should jump by the number killed, and if that reaches 8, the
+     wave number rises and new zombies spawn.
+  7. Reset: destroy some barrels, then press R, including while an explosion is
+     still visible. All 4 barrels return and the explosion disappears.
+  8. Regression: check that ammo still drops per shot, a 2 s reload happens at
+     0, zombie touches still cost 1 HP with blinking, and game over still shows
+     at 0 HP.
+
+> Task 4 Zombie Types + Final Full Audit
+
+  Continue from the fully tested Tasks 1–3 implementation.
+
+  Implement Task 4 — Zombie Types, and after implementing it perform a final
+  audit of the entire project against the repository README.
+
+  Task 4 requirements:
+
+  Preserve the existing Standard Zombie behaviour.
+
+  Add a Fast Zombie:
+
+  clearly faster than Standard,
+
+  exactly 1 HP,
+
+  visibly smaller than Standard,
+
+  visually distinguishable.
+
+  Add a Tank Zombie:
+
+  clearly slower than Standard,
+
+  exactly 6 HP,
+
+  visibly larger than Standard,
+
+  visually distinguishable.
+
+  Mix Standard, Fast and Tank zombies into wave spawning.
+
+  Keep the implementation modular. Prefer subclasses or clean per-type
+  attributes rather than duplicated game-loop logic.
+
+  Ensure spawn coordinates respect each zombie's dimensions and keep spawning
+  sensible.
+
+  Bullet damage must work correctly for all three types.
+
+  Explosive barrels must also work correctly against all three types.
+
+  Killing any type must correctly update score/kills/wave progression.
+
+  Restarting with R must reset everything correctly.
+
+  After Task 4, audit the FINAL game against ALL requirements:
+
+  Player has 3 HP.
+
+  One valid zombie contact removes only 1 HP.
+
+  Invincibility prevents repeated immediate damage and is visibly indicated.
+
+  Game over occurs only at 0 HP.
+
+  Clip size is exactly 12.
+
+  Shooting is blocked at zero ammo.
+
+  Reload takes exactly 2 seconds and does not freeze the game.
+
+  HUD clearly displays HP/ammo/reload status.
+
+  Exactly four barrels appear after reset.
+
+  Bullet/barrel collision produces a visible explosion.
+
+  Nearby zombies die and the barrel disappears.
+
+  Explosion kills count correctly toward wave progression.
+
+  Standard, Fast and Tank zombies all spawn.
+
+  Fast is smaller/faster/1 HP.
+
+  Tank is larger/slower/6 HP.
+
+  Waves still progress.
+
+  Score and kill counters remain coherent.
+
+  Only left click fires.
+
+  R correctly resets all state.
+
+  No unnecessary dependency beyond pygame/pygame-ce.
+
+  Code remains easy to explain and modular.
+
+  Fix any issues you discover during this audit, but do not add unrelated
+  features just for decoration.
+
+  Finally give me:
+
+  a concise summary of the final architecture,
+
+  a complete manual testing checklist,
+
+  any edge case you specifically guarded against,
+
+  confirmation of which files were modified.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Task 4 is in game.py (25_zombie_escape/game.py), and the final audit found
+  nothing else to fix. The only file I modified across all four tasks is
+  25_zombie_escape/game.py. The README and venv are untouched.
+
+  I haven't played it. I compiled it and ran headless checks, which passed:
+  - Over 1000 spawns, about 58% were Standard, 26% Fast and 16% Tank.
+  - Standard died after 3 hits, Fast after 1 and Tank after 6.
+  - Over 60 frames, Standard moved about 81 px, Fast about 162 px and Tank about
+    43 px.
+  - One barrel blast killed all three types (+30 score, +3 kills).
+  - Six bullets killed a Tank and counted as one kill.
+  - reset() restored 4 zombies and 4 barrels.
+
+  Task 4 changes
+
+  - Zombie subclasses: Zombie (Standard) now takes its stats from class
+    constants: SPEED, HP, SIZE and COLOR. FastZombie and TankZombie only
+    override those constants, so there is no duplicated game-loop logic.
+
+  | Type     | Speed | HP  | Size | Colour |
+  |----------|-------|-----|------|--------|
+  | Standard | 1.5   | 3   | 30   | green  |
+  | Fast     | 3.0   | 1   | 20   | yellow |
+  | Tank     | 0.8   | 6   | 44   | purple |
+
+  - Spawning: spawn_zombie picks a type with random.choices (ZOMBIE_WEIGHTS =
+    60/25/15) and uses that type's SIZE for the spawn bounds. It also spawns
+    below the HUD bar now, so zombies don't appear hidden under it. The starting
+    4 zombies and every wave go through the same function, so the mix applies
+    everywhere.
+  - Shared kill path: bullets and barrels already go through register_kill, so
+    all three types update score, kills and waves the same way.
+  - Standard speed changed slightly: the old movement used int(dx/dist*SPEED),
+    which truncates. That made Standard speed depend on direction, about 1 px
+    per frame instead of 1.5, and would have frozen a 0.8-speed Tank completely.
+    Zombies now keep a float position, so Standard moves a bit faster than
+    before (the intended 1.5), and Fast and Tank are properly faster and slower
+    than it.
+
+  Final audit
+
+  Checked against the README and your list by reading the code and running the
+  headless checks above.
+  - Health and invincibility: HP is 3, one contact removes 1, a 1 s timestamp
+    window blocks repeat damage and blinks the player, and game over is set only
+    at hp <= 0.
+  - Ammo: the clip is 12, shooting is blocked at 0 and while reloading, the
+    reload is 2000 ms by timestamp, and the HUD shows ammo or a RELOADING
+    countdown.
+  - Barrels: there are exactly 4 after every reset, a hit gives a visible
+    explosion, nearby zombies die, the barrel disappears, and kills count
+    towards waves.
+  - Input and reset: only the left mouse button fires, and R rebuilds the
+    player, zombies, barrels, explosions, score and wave.
+  - Dependencies: only pygame, plus the standard library modules random, math
+    and time.
+
+  Final architecture
+
+  - Constants: these are at the top of the file.
+  - Zombies: Zombie, with FastZombie and TankZombie as subclasses, plus
+    spawn_zombie.
+  - Player: Player handles movement, shooting, health, invincibility and
+    ammo/reload.
+  - Barrels and explosions: Barrel and Explosion.
+  - Engine: GameEngine runs the loop.
+    - Per frame: it moves things, handles zombie contact, handles barrel hits,
+      then bullet hits and the wave check.
+    - Shared helpers: register_kill and explode are used by both bullets and
+      barrels.
+
+  Edge cases I guarded against
+
+  - A zombie in contact for many frames cannot drain HP faster than once per
+    second.
+  - A blocked shot, such as one fired while reloading or with 0 ammo, or one at
+    the player's own position, costs no ammo.
+  - The kill bonus no longer disappears the next frame.
+  - A zombie is never counted twice when a bullet and an explosion both hit it.
+  - One bullet cannot trigger a barrel twice, and a barrel cannot explode twice.
+  - Slow Tanks still move because of the float position.
+  - Large zombies stay inside the screen when they spawn.
+  - A reload or explosion left over from before R cannot carry into the new
+    game.
+
+  Manual test checklist
+
+  1. Standard behaviour: green zombies approach and take 3 hits.
+  2. Fast: small yellow zombies run noticeably faster than Standard and die in 1
+     hit.
+  3. Tank: large purple zombies are slow and need 6 hits. Count them.
+  4. All three types appear within the first waves, and none spawn under the HUD
+     or on top of the player.
+  5. Run through the Task 1, 2 and 3 checklists again: 3 HP with blinking and
+     game over at 0, 12 ammo with the 2 s reload, and 4 barrels that explode on
+     a bullet.
+  6. Blast a mixed group with a barrel. Standard, Fast and Tank within about 100
+     px all die, and kills advance the wave.
+  7. Reach wave 2 and wave 3 with a mix of kills from bullets and barrels.
+     Counters reset and new zombies spawn.
+  8. Press R at different moments (reloading, blinking, game over,
+     mid-explosion) and confirm everything resets.
